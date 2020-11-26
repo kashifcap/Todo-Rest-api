@@ -120,3 +120,17 @@ def complete_todo(current_user,todo_id):
     result = todo_schema.dump(todo)
 
     return jsonify({'msg' : 'Todo completed', 'Todo' : result})
+
+
+@app.route('/todo/<todo_id>', methods=['DELETE'])
+@token_required
+def delete_todo(current_user, todo_id):
+    todo = Todo.query.filter_by(id=todo_id).first()
+
+    if todo.user_id != current_user.public_id:
+        return jsonify({'msg' : 'Permission denied!'}), 401
+    
+    db.session.delete(todo)
+    db.session.commit()
+
+    return jsonify({'msg' : 'Todo deleted'})
