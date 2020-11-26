@@ -9,4 +9,4 @@ db = SQLAlchemy(app)
 ma = Marshmallow(app)
 
 app.config['SECRET_KEY'] = 'Thisissecret'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///todo.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///testpy'
