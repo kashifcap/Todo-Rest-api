@@ -6,6 +6,7 @@ import uuid
 import jwt
 import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 
 
 def token_required(f):
@@ -13,19 +14,22 @@ def token_required(f):
     def decorated(*args,**kwargs):
         token = None
 
-        if not 'x-access-token' in request.headers:
+        if 'x-access-token' in request.headers:
             token = request.headers['x-access-token']
         
         if not token:
-            return jsonify({'msg' : 'Invalid Token!'}),401
+            print("token not present")
+            return jsonify({'msg' : 'Invalid Token!'}), 401
         
         try:
             data = jwt.decode(token, app.config['SECRET_KEY'])
             current_user = User.query.filter_by(public_id = data['public_id']).first()
         except:
-            retrun jsonify({'msg' : 'Invalid Token!'}), 401
+            print("corrupted token")
+            return jsonify({'msg' : 'Invalid Token!'}), 401
         
         if not current_user:
+            print("user not associated with toke")
             return jsonify({'msg' : 'Invalid Token'}), 401
         
         return f(current_user, *args,**kwargs)
@@ -78,4 +82,25 @@ def login():
 
 
 @app.route('/todo', methods=['GET'])
-def get_todo():
+@token_required
+def get_todo(current_user):
+    todo = Todo.query.filter_by(user_id = current_user.public_id)
+
+    result = todos_schema.dump(todo)
+
+    return jsonify(result)
+
+
+@app.route('/todo', methods=['POST'])
+@token_required
+def add_todo(current_user):
+    data = request.get_json()
+
+    todo = Todo(description=data['description'],complete=False,user_id=current_user.public_id)
+
+    db.session.add(todo)
+    db.session.commit()
+
+    result = todo_schema.dump(todo)
+
+    return jsonify({'msg' : 'Todo Created', 'Todo' : result})
