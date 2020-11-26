@@ -104,3 +104,19 @@ def add_todo(current_user):
     result = todo_schema.dump(todo)
 
     return jsonify({'msg' : 'Todo Created', 'Todo' : result})
+
+
+@app.route('/todo/<todo_id>', methods=['PUT'])
+@token_required
+def complete_todo(current_user,todo_id):
+    todo = Todo.query.filter_by(id=todo_id).first()
+
+    if todo.user_id != current_user.public_id:
+        return jsonify({'msg' : 'Permission denied!'}), 401
+    
+    todo.complete = True
+    db.session.commit()
+
+    result = todo_schema.dump(todo)
+
+    return jsonify({'msg' : 'Todo completed', 'Todo' : result})
